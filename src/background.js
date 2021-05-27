@@ -1,12 +1,17 @@
 "use strict";
-
+const electron = require("electron");
+const path = require("path");
 import { app, protocol, BrowserWindow } from "electron";
 import {
   createProtocol
   // installVueDevtools
 } from "vue-cli-plugin-electron-builder/lib";
 const isDevelopment = process.env.NODE_ENV !== "production";
+// 自动更新设置
+import { autoUpdater } from "electron-updater";
 
+// 快捷键设置
+const globalShortcut = electron.globalShortcut;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
@@ -22,7 +27,9 @@ function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      // 通过preload让渲染进程拥有使用node模块的能力
+      preload: path.join(app.getAppPath(), "preload.js")
     }
   });
 
@@ -34,6 +41,7 @@ function createWindow() {
     createProtocol("app");
     // Load the index.html when not in development
     win.loadURL("app://./index.html");
+    autoUpdater.checkForUpdates();
   }
 
   win.on("closed", () => {
@@ -75,7 +83,28 @@ app.on("ready", async () => {
     //   console.error('Vue Devtools failed to install:', e.toString())
     // }
   }
+  // 可以随时调起控制台方便调试
+  globalShortcut.register("CommandOrControl+K", function() {
+    win.webContents.openDevTools();
+  });
   createWindow();
+});
+
+autoUpdater.on("checking-for-update", () => {});
+autoUpdater.on("update-available", info => {
+  console.log(info);
+  dialog.showMessageBox({
+    title: "新版本发布",
+    message: "有新内容更新，稍后将重新为您安装",
+    buttons: ["确定"],
+    type: "info",
+    noLink: true
+  });
+});
+
+autoUpdater.on("update-downloaded", info => {
+  console.log(info);
+  autoUpdater.quitAndInstall();
 });
 
 // Exit cleanly on request from parent process in development mode.

@@ -1,6 +1,7 @@
 "use strict";
 const electron = require("electron");
 const path = require("path");
+const fs = require("fs");
 import { app, protocol, BrowserWindow } from "electron";
 import {
   createProtocol
@@ -20,6 +21,17 @@ let win;
 protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { secure: true, standard: true } }
 ]);
+
+//将preload.js自动放入dist_electron
+const targetPath = path.join(app.getAppPath(), "preload.js");
+const dir = path.dirname(app.getAppPath());
+const sourceDir = path.join(dir, "public");
+const sourcePath = path.join(sourceDir, "preload.js");
+fs.copyFile(sourcePath, targetPath, err => {
+  if (err) {
+    console.log("err");
+  }
+});
 
 function createWindow() {
   // Create the browser window.
